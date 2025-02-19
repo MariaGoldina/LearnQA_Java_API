@@ -7,6 +7,7 @@ public class LongRedirectTest {
     public void testLongRedirectLocation() {
         String url = "https://playground.learnqa.ru/api/long_redirect";
         int statusCode = 0;
+        int count = 0;
         while (statusCode!=200) {
             Response response = RestAssured
                     .given()
@@ -18,10 +19,12 @@ public class LongRedirectTest {
 
             if(response.getStatusCode()!=200) {
                 url = response.getHeader("Location");
+                count+=1;
             }
             statusCode = response.getStatusCode();
         }
 
-        System.out.println(url);
+        System.out.println("Url итогового редиректа: " + url);
+        System.out.println("Количество редиректов: " + count);
     }
 }

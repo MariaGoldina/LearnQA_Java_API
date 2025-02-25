@@ -1,3 +1,5 @@
+package ExerciseTests;
+
 import org.junit.jupiter.api.Test;
 
 public class HelloTest {

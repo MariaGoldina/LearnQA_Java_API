@@ -1,4 +1,4 @@
-package ExerciseTests;
+package exerciseTests;
 
 import io.restassured.path.json.JsonPath;
 import org.junit.jupiter.api.Test;

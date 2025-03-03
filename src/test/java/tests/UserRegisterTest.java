@@ -1,10 +1,7 @@
 package tests;
 
 import io.restassured.response.Response;
-import lib.Assertions;
-import lib.BaseTestCase;
-import lib.DataGenerator;
-import lib.ApiCoreRequests;
+import lib.*;
 import org.junit.jupiter.api.Test;
 
 import java.util.HashMap;
@@ -22,7 +19,6 @@ import org.junit.jupiter.params.provider.ValueSource;
 @Feature("Registration")
 public class UserRegisterTest extends BaseTestCase {
     private final ApiCoreRequests apiCoreRequests = new ApiCoreRequests();
-    private final String registrationUrl = "https://playground.learnqa.ru/api/user/";
 
     @Test
     @Description("This test successfully register new user with correct user data.")
@@ -31,7 +27,7 @@ public class UserRegisterTest extends BaseTestCase {
         Map<String, String> userData = DataGenerator.getRegistrationData();
 
         Response responseCreateUser = apiCoreRequests
-                .makePostRequest(registrationUrl, userData);
+                .makePostCreateRequest(RequestSettings.registrationUrl, userData);
 
         Assertions.assertResponseCodeEquals(responseCreateUser, 200);
         Assertions.assertJsonHasField(responseCreateUser, "id");
@@ -48,7 +44,7 @@ public class UserRegisterTest extends BaseTestCase {
         userData = DataGenerator.getRegistrationData(userData);
 
         Response responseCreateUser = apiCoreRequests
-                .makePostRequest(registrationUrl, userData);
+                .makePostCreateRequest(RequestSettings.registrationUrl, userData);
 
         Assertions.assertResponseCodeEquals(responseCreateUser, 400);
         Assertions.assertResponseTextEquals(responseCreateUser,
@@ -66,7 +62,7 @@ public class UserRegisterTest extends BaseTestCase {
         userData = DataGenerator.getRegistrationData(userData);
 
         Response responseCreateUser = apiCoreRequests
-                .makePostRequest(registrationUrl, userData);
+                .makePostCreateRequest(RequestSettings.registrationUrl, userData);
 
         Assertions.assertResponseCodeEquals(responseCreateUser, 400);
         Assertions.assertResponseHtmlTextEquals(responseCreateUser,
@@ -82,7 +78,7 @@ public class UserRegisterTest extends BaseTestCase {
         userData.remove(field);
 
         Response responseCreateUser = apiCoreRequests
-                .makePostRequest(registrationUrl, userData);
+                .makePostCreateRequest(RequestSettings.registrationUrl, userData);
 
         Assertions.assertResponseCodeEquals(responseCreateUser, 400);
         Assertions.assertResponseHtmlTextEquals(responseCreateUser,
@@ -102,7 +98,7 @@ public class UserRegisterTest extends BaseTestCase {
         userData = DataGenerator.getRegistrationData(userData);
 
         Response responseCreateUser = apiCoreRequests
-                .makePostRequest(registrationUrl, userData);
+                .makePostCreateRequest(RequestSettings.registrationUrl, userData);
         responseCreateUser.prettyPrint();
 
         Assertions.assertResponseCodeEquals(responseCreateUser, 400);

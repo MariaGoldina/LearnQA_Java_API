@@ -4,6 +4,7 @@ import io.restassured.response.Response;
 import lib.Assertions;
 import lib.BaseTestCase;
 import lib.ApiCoreRequests;
+import lib.RequestSettings;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -24,8 +25,6 @@ public class UserAuthTest extends BaseTestCase {
     String header;
     int userIdOnAuth;
     private final ApiCoreRequests apiCoreRequests = new ApiCoreRequests();
-    private final String authUrl = "https://playground.learnqa.ru/api/user/auth";
-    private final String loginUrl = "https://playground.learnqa.ru/api/user/login";
 
     @BeforeEach
     public void loginUser() {
@@ -34,7 +33,7 @@ public class UserAuthTest extends BaseTestCase {
         authData.put("password", "1234");
 
         Response responseGetAuth = apiCoreRequests
-                .makePostRequest(loginUrl, authData);
+                .makePostLoginRequest(RequestSettings.loginUrl, authData);
 
         this.cookie = this.getCookie(responseGetAuth, "auth_sid");
         this.header = this.getHeaders(responseGetAuth, "x-csrf-token");
@@ -46,7 +45,7 @@ public class UserAuthTest extends BaseTestCase {
     @DisplayName("Test positive auth user")
     public void testAuthUser() {
         Response responseCheckAuth = apiCoreRequests
-                .makeGetRequest(authUrl, this.header, this.cookie);
+                .makeGetRequest(RequestSettings.authUrl, this.header, this.cookie);
 
         Assertions.assertJsonByName(responseCheckAuth, "user_id", this.userIdOnAuth);
     }
@@ -57,10 +56,10 @@ public class UserAuthTest extends BaseTestCase {
     @ValueSource(strings = {"cookie", "headers"})
     public void testNegativeAuthUser(String condition) {
         if (condition.equals("cookie")) {
-            Response responseForCheck = apiCoreRequests.makeGetRequestWithCookie(authUrl, this.cookie);
+            Response responseForCheck = apiCoreRequests.makeGetRequestWithCookie(RequestSettings.authUrl, this.cookie);
             Assertions.assertJsonByName(responseForCheck, "user_id", 0);
         } else if (condition.equals("headers")) {
-            Response responseForCheck = apiCoreRequests.makeGetRequestWithToken(authUrl, this.header);
+            Response responseForCheck = apiCoreRequests.makeGetRequestWithToken(RequestSettings.authUrl, this.header);
             Assertions.assertJsonByName(responseForCheck, "user_id", 0);
         } else {
             throw new IllegalArgumentException("Condition value is known " + condition);

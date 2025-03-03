@@ -9,7 +9,7 @@ import java.util.Map;
 import static io.restassured.RestAssured.given;
 
 public class ApiCoreRequests {
-    @Step("Make a GET-request with token and cookie")
+    @Step("Make a GET-auth request with token and cookie")
     public Response makeGetRequest(String url, String token, String cookie) {
         return given()
                 .filter(new AllureRestAssured())
@@ -19,7 +19,7 @@ public class ApiCoreRequests {
                 .andReturn();
     }
 
-    @Step("Make a GET-request with auth cookie only")
+    @Step("Make a GET-auth request with auth cookie only")
     public Response makeGetRequestWithCookie(String url, String cookie) {
         return given()
                 .filter(new AllureRestAssured())
@@ -28,7 +28,7 @@ public class ApiCoreRequests {
                 .andReturn();
     }
 
-    @Step("Make a GET-request with token only")
+    @Step("Make a GET-auth request with token only")
     public Response makeGetRequestWithToken(String url, String token) {
         return given()
                 .filter(new AllureRestAssured())
@@ -37,8 +37,35 @@ public class ApiCoreRequests {
                 .andReturn();
     }
 
-    @Step("Make a POST-request")
-    public Response makePostRequest(String url, Map<String, String> data) {
+    @Step("Make a GET-user data request with user_id, token and cookie")
+    public Response makeGetRequestWithUserId(String url, String userId, String token, String cookie) {
+        return given()
+                .filter(new AllureRestAssured())
+                .header("x-csrf-token", token)
+                .cookie("auth_sid", cookie)
+                .get(url + userId)
+                .andReturn();
+    }
+
+    @Step("Make a GET-user data request with user_id only")
+    public Response makeGetRequestWithUserIdOnly(String url, String userId) {
+        return given()
+                .filter(new AllureRestAssured())
+                .get(url + userId)
+                .andReturn();
+    }
+
+    @Step("Make a POST-login request")
+    public Response makePostLoginRequest(String url, Map<String, String> authdata) {
+        return given()
+                .filter(new AllureRestAssured())
+                .body(authdata)
+                .post(url)
+                .andReturn();
+    }
+
+    @Step("Make a POST-create user request")
+    public Response makePostCreateRequest(String url, Map<String, String> data) {
         return given()
                 .filter(new AllureRestAssured())
                 .body(data)

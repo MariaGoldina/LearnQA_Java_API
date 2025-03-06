@@ -1,62 +1,259 @@
 package tests;
 
-import io.restassured.RestAssured;
-import io.restassured.path.json.JsonPath;
+import io.qameta.allure.Allure;
+import io.qameta.allure.Description;
+import io.qameta.allure.Epic;
+import io.qameta.allure.Feature;
 import io.restassured.response.Response;
-import lib.Assertions;
-import lib.BaseTestCase;
-import lib.DataGenerator;
+import lib.*;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import java.util.HashMap;
 import java.util.Map;
 
+@Epic("Edit user data cases")
+@Feature("Edit user data")
 public class UserEditTest extends BaseTestCase {
+    private final ApiCoreRequests apiCoreRequests = new ApiCoreRequests();
+
     @Test
+    @Description("This test successfully edit user data with user's auth cookie and token")
+    @DisplayName("Test positive edit user data with auth")
     public void testEditJustCreatedUser() {
-        //GENERATE USER
+        //CREATE USER
         Map<String, String> userData = DataGenerator.getRegistrationData();
 
-        JsonPath responseCreateUser = RestAssured
-                .given()
-                .body(userData)
-                .post("https://playground.learnqa.ru/api/user/")
-                .jsonPath();
+        Response responseCreateUser = apiCoreRequests
+                .makePostCreateRequest(RequestSettings.registrationUrl, userData);
 
-        String userId = responseCreateUser.getString("id");
+        Allure.step("Check preconditions: User is created.", step -> {
+            Assertions.assertResponseCodeEquals(responseCreateUser, 200);
+        });
+
+        String userId = responseCreateUser.jsonPath().getString("id");
 
         //LOGIN
         Map<String, String> authData = new HashMap<>();
         authData.put("email", userData.get("email"));
         authData.put("password", userData.get("password"));
 
-        Response responseGetAuth = RestAssured
-                .given()
-                .body(authData)
-                .post("https://playground.learnqa.ru/api/user/login")
-                .andReturn();
+        Response responseGetAuth = apiCoreRequests
+                .makePostLoginRequest(RequestSettings.loginUrl, authData);
+
+        Allure.step("Check preconditions: User is authorized.", step -> {
+            Assertions.assertResponseCodeEquals(responseGetAuth, 200);
+        });
+
+        String cookie = this.getCookie(responseGetAuth, "auth_sid");
+        String header = this.getHeaders(responseGetAuth, "x-csrf-token");
 
         //PUT
         String newName = "Changed Name";
         Map<String, String> editData = new HashMap<>();
         editData.put("firstName", newName);
 
-        Response responseEditUser = RestAssured
-                .given()
-                .header("x-csrf-token", this.getHeaders(responseGetAuth, "x-csrf-token"))
-                .cookie("auth_sid", this.getCookie(responseGetAuth, "auth_sid"))
-                .body(editData)
-                .put("https://playground.learnqa.ru/api/user/" + userId)
-                .andReturn();
+        Response responseEditUser = apiCoreRequests
+                .makePutEditRequest(RequestSettings.userUrl, userId, editData, header, cookie);
+
+        Allure.step("Check status code 200 for edit request.", step -> {
+            Assertions.assertResponseCodeEquals(responseEditUser, 200);
+        });
 
         //GET
-        Response responseGetUserData = RestAssured
-                .given()
-                .header("x-csrf-token", this.getHeaders(responseGetAuth, "x-csrf-token"))
-                .cookie("auth_sid", this.getCookie(responseGetAuth, "auth_sid"))
-                .get("https://playground.learnqa.ru/api/user/" + userId)
-                .andReturn();
+        Response responseGetUserData = apiCoreRequests
+                .makeGetRequestWithUserId(RequestSettings.userUrl, userId, header, cookie);
 
         Assertions.assertJsonByName(responseGetUserData, "firstName", newName);
+    }
+
+    @Description("This test check status code and answer for edit user data request without required auth params")
+    @DisplayName("Test negative edit user data without auth")
+    @ParameterizedTest
+    @ValueSource(strings = {"no_auth", "token_only", "cookie_only"})
+    public void testEditUserDataWithoutAuth(String condition) {
+        //CREATE USER
+        Map<String, String> userData = DataGenerator.getRegistrationData();
+
+        Response responseCreateUser = apiCoreRequests
+                .makePostCreateRequest(RequestSettings.registrationUrl, userData);
+
+        Allure.step("Check preconditions: User is created.", step -> {
+            Assertions.assertResponseCodeEquals(responseCreateUser, 200);
+        });
+
+        String userId = responseCreateUser.jsonPath().getString("id");
+
+        //LOGIN
+        Map<String, String> authData = new HashMap<>();
+        authData.put("email", userData.get("email"));
+        authData.put("password", userData.get("password"));
+
+        Response responseGetAuth = apiCoreRequests
+                .makePostLoginRequest(RequestSettings.loginUrl, authData);
+
+        //PUT
+        String newName = "Changed Name";
+        Map<String, String> editData = new HashMap<>();
+        editData.put("firstName", newName);
+
+        if (condition.equals("no_auth")) {
+            Response responseEditUser = apiCoreRequests.makePutEditRequestWithUserIdOnly(
+                    RequestSettings.userUrl, userId, editData);
+            Assertions.assertResponseCodeEquals(responseEditUser, 400);
+            Assertions.assertJsonByName(responseEditUser, "error", "Auth token not supplied");
+        } else if (condition.equals("token_only")) {
+            Response responseEditUser = apiCoreRequests.makePutEditRequestWithTokenOnly(
+                    RequestSettings.userUrl, userId, editData, this.getHeaders(responseGetAuth, "x-csrf-token"));
+            Assertions.assertResponseCodeEquals(responseEditUser, 400);
+            Assertions.assertJsonByName(responseEditUser, "error", "Auth token not supplied");
+        } else if (condition.equals("cookie_only")) {
+            Response responseEditUser = apiCoreRequests.makePutEditRequestWithCookieOnly(
+                    RequestSettings.userUrl, userId, editData, this.getCookie(responseGetAuth, "auth_sid"));
+            Assertions.assertResponseCodeEquals(responseEditUser, 400);
+            Assertions.assertJsonByName(responseEditUser, "error", "Auth token not supplied");
+        } else {
+            throw new IllegalArgumentException("Condition value is known " + condition);
+        }
+    }
+
+    @Test
+    @Description("This test check status code and answer for edit user data-request with auth cookie and token for other user.")
+    @DisplayName("Test negative edit user data with other user's auth")
+    public void testEditUserDataDetailsAuthAsOtherUser() {
+        //CREATE USER 1
+        Map<String, String> user1Data = DataGenerator.getRegistrationData();
+
+        Response responseCreateUser1 = apiCoreRequests
+                .makePostCreateRequest(RequestSettings.registrationUrl, user1Data);
+
+        Allure.step("Check preconditions: User1 is created.", step -> {
+            Assertions.assertResponseCodeEquals(responseCreateUser1, 200);
+        });
+
+        //LOGIN USER 1
+        Map<String, String> authUser1Data = new HashMap<>();
+        authUser1Data.put("email", user1Data.get("email"));
+        authUser1Data.put("password", user1Data.get("password"));
+
+        Response responseGetAuthUser1 = apiCoreRequests
+                .makePostLoginRequest(RequestSettings.loginUrl, authUser1Data);
+
+        Allure.step("Check preconditions: User1 is authorized.", step -> {
+            Assertions.assertResponseCodeEquals(responseGetAuthUser1, 200);
+        });
+
+        String cookie = this.getCookie(responseGetAuthUser1, "auth_sid");
+        String header = this.getHeaders(responseGetAuthUser1, "x-csrf-token");
+
+        //CREATE USER 2
+        Map<String, String> user2Data = DataGenerator.getRegistrationData();
+
+        Response responseCreateUser2 = apiCoreRequests
+                .makePostCreateRequest(RequestSettings.registrationUrl, user2Data);
+
+        Allure.step("Check preconditions: User2 is created.", step -> {
+            Assertions.assertResponseCodeEquals(responseCreateUser2, 200);
+        });
+
+        String user2Id = responseCreateUser2.jsonPath().getString("id");
+
+        String newName = "Changed Name";
+        Map<String, String> editData = new HashMap<>();
+        editData.put("firstName", newName);
+
+        Response responseEditUser2 = apiCoreRequests
+                .makePutEditRequest(RequestSettings.userUrl, user2Id, editData, header, cookie);
+
+        Assertions.assertResponseCodeEquals(responseEditUser2, 400);
+        Assertions.assertJsonByName(responseEditUser2, "error", "This user can only edit their own data.");
+    }
+
+    @Test
+    @Description("This test check status code and answer for change user's email to uncorrect email.")
+    @DisplayName("Test negative edit user data with uncorrect email")
+    public void testEditUserDataWithUncorrectEmail() {
+        //CREATE USER
+        Map<String, String> userData = DataGenerator.getRegistrationData();
+
+        Response responseCreateUser = apiCoreRequests
+                .makePostCreateRequest(RequestSettings.registrationUrl, userData);
+
+        Allure.step("Check preconditions: User is created.", step -> {
+            Assertions.assertResponseCodeEquals(responseCreateUser, 200);
+        });
+
+        String userId = responseCreateUser.jsonPath().getString("id");
+
+        //LOGIN
+        Map<String, String> authData = new HashMap<>();
+        authData.put("email", userData.get("email"));
+        authData.put("password", userData.get("password"));
+
+        Response responseGetAuth = apiCoreRequests
+                .makePostLoginRequest(RequestSettings.loginUrl, authData);
+
+        Allure.step("Check preconditions: User is authorized.", step -> {
+            Assertions.assertResponseCodeEquals(responseGetAuth, 200);
+        });
+
+        String cookie = this.getCookie(responseGetAuth, "auth_sid");
+        String header = this.getHeaders(responseGetAuth, "x-csrf-token");
+
+        //PUT
+        Map<String, String> editData = new HashMap<>();
+        editData.put("email", userData.get("email").replace("@", ""));
+
+        Response responseEditUser = apiCoreRequests
+                .makePutEditRequest(RequestSettings.userUrl, userId, editData, header, cookie);
+
+        Assertions.assertResponseCodeEquals(responseEditUser, 400);
+        Assertions.assertJsonByName(responseEditUser, "error", "Invalid email format");
+    }
+
+    @Description("This test check status code and answer for change user's firstName to uncorrect name with 1 symbol.")
+    @DisplayName("Test negative edit user data with uncorrect name")
+    @ParameterizedTest
+    @ValueSource(strings = {"username", "firstName", "lastName"})
+    public void testEditUserDataWithUncorrectName(String field) {
+        //CREATE USER
+        Map<String, String> userData = DataGenerator.getRegistrationData();
+
+        Response responseCreateUser = apiCoreRequests
+                .makePostCreateRequest(RequestSettings.registrationUrl, userData);
+
+        Allure.step("Check preconditions: User is created.", step -> {
+            Assertions.assertResponseCodeEquals(responseCreateUser, 200);
+        });
+
+        String userId = responseCreateUser.jsonPath().getString("id");
+
+        //LOGIN
+        Map<String, String> authData = new HashMap<>();
+        authData.put("email", userData.get("email"));
+        authData.put("password", userData.get("password"));
+
+        Response responseGetAuth = apiCoreRequests
+                .makePostLoginRequest(RequestSettings.loginUrl, authData);
+
+        Allure.step("Check preconditions: User is authorized.", step -> {
+            Assertions.assertResponseCodeEquals(responseGetAuth, 200);
+        });
+
+        String cookie = this.getCookie(responseGetAuth, "auth_sid");
+        String header = this.getHeaders(responseGetAuth, "x-csrf-token");
+
+        //PUT
+        Map<String, String> editData = new HashMap<>();
+        editData.put(field, DataGenerator.getRandomString(1));
+
+        Response responseEditUser = apiCoreRequests
+                .makePutEditRequest(RequestSettings.userUrl, userId, editData, header, cookie);
+
+        Assertions.assertResponseCodeEquals(responseEditUser, 400);
+        Assertions.assertJsonByName(
+                responseEditUser, "error", "The value for field `" + field + "` is too short");
     }
 }

@@ -72,4 +72,44 @@ public class ApiCoreRequests {
                 .post(url)
                 .andReturn();
     }
+
+    @Step("Make a PUT-edit user data request with user_id only")
+    public Response makePutEditRequestWithUserIdOnly(String url, String userId, Map<String, String> data) {
+        return given()
+                .filter(new AllureRestAssured())
+                .body(data)
+                .put(url + userId)
+                .andReturn();
+    }
+
+    @Step("Make a PUT-edit user data request with user_id and token only")
+    public Response makePutEditRequestWithTokenOnly(String url, String userId, Map<String, String> data, String token) {
+        return given()
+                .filter(new AllureRestAssured())
+                .header("x-csrf-token", token)
+                .body(data)
+                .put(url + userId)
+                .andReturn();
+    }
+
+    @Step("Make a PUT-edit user data request with user_id and cookie only")
+    public Response makePutEditRequestWithCookieOnly(String url, String userId, Map<String, String> data, String cookie) {
+        return given()
+                .filter(new AllureRestAssured())
+                .cookie("auth_sid", cookie)
+                .body(data)
+                .put(url + userId)
+                .andReturn();
+    }
+
+    @Step("Make a PUT-edit user data request with user_id, token and cookie")
+    public Response makePutEditRequest(String url, String userId, Map<String, String> data, String token, String cookie) {
+        return given()
+                .filter(new AllureRestAssured())
+                .header("x-csrf-token", token)
+                .cookie("auth_sid", cookie)
+                .body(data)
+                .put(url + userId)
+                .andReturn();
+    }
 }

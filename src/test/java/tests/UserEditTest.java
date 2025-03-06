@@ -213,7 +213,7 @@ public class UserEditTest extends BaseTestCase {
         Assertions.assertJsonByName(responseEditUser, "error", "Invalid email format");
     }
 
-    @Description("This test check status code and answer for change user's firstName to uncorrect name with 1 symbol.")
+    @Description("This test check status code and answer for edit user data with uncorrect name with 1 symbol.")
     @DisplayName("Test negative edit user data with uncorrect name")
     @ParameterizedTest
     @ValueSource(strings = {"username", "firstName", "lastName"})

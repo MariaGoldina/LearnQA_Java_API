@@ -99,7 +99,6 @@ public class UserRegisterTest extends BaseTestCase {
 
         Response responseCreateUser = apiCoreRequests
                 .makePostCreateRequest(RequestSettings.registrationUrl, userData);
-        responseCreateUser.prettyPrint();
 
         Assertions.assertResponseCodeEquals(responseCreateUser, 400);
         Assertions.assertResponseHtmlTextEquals(responseCreateUser,

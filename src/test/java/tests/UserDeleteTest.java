@@ -1,12 +1,11 @@
 package tests;
 
-import io.qameta.allure.Allure;
-import io.qameta.allure.Description;
-import io.qameta.allure.Epic;
-import io.qameta.allure.Feature;
+import io.qameta.allure.*;
 import io.restassured.response.Response;
 import lib.*;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Tags;
 import org.junit.jupiter.api.Test;
 
 import java.util.HashMap;
@@ -18,8 +17,13 @@ public class UserDeleteTest extends BaseTestCase {
     private final ApiCoreRequests apiCoreRequests = new ApiCoreRequests();
 
     @Test
+    @Owner(value = "Голдина М.А.")
+    @TmsLink(value = "PN-13")
+    @Story("Недопустимое удаление пользователя")
+    @Severity(value = SeverityLevel.CRITICAL)
     @Description("This test check status code and answer for delete user 2 with role admin")
     @DisplayName("Test negative delete amin user")
+    @Tags({@Tag("delete user"), @Tag("smoke")})
     public void testDeleteUserDataForAdminUser() {
         Map<String, String> authData = new HashMap<>();
         authData.put("email", "vinkotov@example.com");
@@ -45,8 +49,13 @@ public class UserDeleteTest extends BaseTestCase {
     }
 
     @Test
+    @Owner(value = "Голдина М.А.")
+    @TmsLink(value = "PN-14")
+    @Story("Успешное удаление пользователя")
+    @Severity(value = SeverityLevel.CRITICAL)
     @Description("This test successfully delete user with user's auth cookie and token")
     @DisplayName("Test positive delete user with user's auth params")
+    @Tags({@Tag("delete user"), @Tag("smoke")})
     public void testDeleteUserDataDetailsAuthAsSameUser() {
         //CREATE USER
         Map<String, String> userData = DataGenerator.getRegistrationData();
@@ -93,8 +102,14 @@ public class UserDeleteTest extends BaseTestCase {
     }
 
     @Test
+    @Owner(value = "Голдина М.А.")
+    @TmsLink(value = "PN-15")
+    @Issue(value = "DU-1")
+    @Story("Недопустимое удаление пользователя")
+    @Severity(value = SeverityLevel.CRITICAL)
     @Description("This test check status code and answer for delete user with auth cookie and token for other user.")
     @DisplayName("Test negative delete user with other user's auth")
+    @Tag("delete user")
     public void testDeleteUserDetailsAuthAsOtherUser() {
         //CREATE USER 1
         Map<String, String> user1Data = DataGenerator.getRegistrationData();

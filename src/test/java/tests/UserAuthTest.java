@@ -1,22 +1,17 @@
 package tests;
 
+import io.qameta.allure.*;
 import io.restassured.response.Response;
 import lib.Assertions;
 import lib.BaseTestCase;
 import lib.ApiCoreRequests;
 import lib.RequestSettings;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
 import java.util.HashMap;
 import java.util.Map;
-
-import io.qameta.allure.Description;
-import io.qameta.allure.Epic;
-import io.qameta.allure.Feature;
-import org.junit.jupiter.api.DisplayName;
 
 @Epic("Authorization cases")
 @Feature("Authorization")
@@ -41,8 +36,13 @@ public class UserAuthTest extends BaseTestCase {
     }
 
     @Test
+    @Owner(value = "Голдина М.А.")
+    @TmsLink(value = "PN-6")
+    @Story("Успешная авторизация пользователя")
+    @Severity(value = SeverityLevel.BLOCKER)
     @Description("This test successfully authorize user by email and password.")
     @DisplayName("Test positive auth user")
+    @Tags({@Tag("authorization"), @Tag("smoke")})
     public void testAuthUser() {
         Response responseCheckAuth = apiCoreRequests
                 .makeGetRequest(RequestSettings.authUrl, this.header, this.cookie);
@@ -50,11 +50,18 @@ public class UserAuthTest extends BaseTestCase {
         Assertions.assertJsonByName(responseCheckAuth, "user_id", this.userIdOnAuth);
     }
 
+    @Owner(value = "Голдина М.А.")
+    @TmsLink(value = "PN-7")
+    @Story("Недопустимая авторизация пользователя")
+    @Severity(value = SeverityLevel.CRITICAL)
     @Description("This test checks authorization status without auth token or cookie.")
     @DisplayName("Test negative auth user")
-    @ParameterizedTest
+    @ParameterizedTest(name = "{displayName} - with only {0}")
     @ValueSource(strings = {"cookie", "headers"})
+    @Tag("authorization")
     public void testNegativeAuthUser(String condition) {
+        Allure.parameter("auth param", condition);
+
         if (condition.equals("cookie")) {
             Response responseForCheck = apiCoreRequests.makeGetRequestWithCookie(RequestSettings.authUrl, this.cookie);
             Assertions.assertJsonByName(responseForCheck, "user_id", 0);

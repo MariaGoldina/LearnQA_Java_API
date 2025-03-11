@@ -1,12 +1,11 @@
 package tests;
 
-import io.qameta.allure.Allure;
-import io.qameta.allure.Description;
-import io.qameta.allure.Epic;
-import io.qameta.allure.Feature;
+import io.qameta.allure.*;
 import io.restassured.response.Response;
 import lib.*;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Tags;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -20,8 +19,13 @@ public class UserEditTest extends BaseTestCase {
     private final ApiCoreRequests apiCoreRequests = new ApiCoreRequests();
 
     @Test
+    @Owner(value = "Голдина М.А.")
+    @TmsLink(value = "PN-8")
+    @Story("Успешное изменение данных пользователя")
+    @Severity(value = SeverityLevel.CRITICAL)
     @Description("This test successfully edit user data with user's auth cookie and token")
     @DisplayName("Test positive edit user data with auth")
+    @Tags({@Tag("edit user"), @Tag("smoke")})
     public void testEditJustCreatedUser() {
         //CREATE USER
         Map<String, String> userData = DataGenerator.getRegistrationData();
@@ -69,11 +73,18 @@ public class UserEditTest extends BaseTestCase {
         Assertions.assertJsonByName(responseGetUserData, "firstName", newName);
     }
 
+    @Owner(value = "Голдина М.А.")
+    @TmsLink(value = "PN-9")
+    @Story("Недопустимое изменение данных пользователя")
+    @Severity(value = SeverityLevel.CRITICAL)
     @Description("This test check status code and answer for edit user data request without required auth params")
     @DisplayName("Test negative edit user data without auth")
-    @ParameterizedTest
+    @ParameterizedTest(name = "{displayName} - with {0}")
     @ValueSource(strings = {"no_auth", "token_only", "cookie_only"})
+    @Tag("edit user")
     public void testEditUserDataWithoutAuth(String condition) {
+        Allure.parameter("auth params", condition);
+
         //CREATE USER
         Map<String, String> userData = DataGenerator.getRegistrationData();
 
@@ -120,8 +131,14 @@ public class UserEditTest extends BaseTestCase {
     }
 
     @Test
+    @Owner(value = "Голдина М.А.")
+    @TmsLink(value = "PN-10")
+    @Issue(value = "EU-1")
+    @Story("Недопустимое изменение данных пользователя")
+    @Severity(value = SeverityLevel.CRITICAL)
     @Description("This test check status code and answer for edit user data-request with auth cookie and token for other user.")
     @DisplayName("Test negative edit user data with other user's auth")
+    @Tag("edit user")
     public void testEditUserDataDetailsAuthAsOtherUser() {
         //CREATE USER 1
         Map<String, String> user1Data = DataGenerator.getRegistrationData();
@@ -172,8 +189,13 @@ public class UserEditTest extends BaseTestCase {
     }
 
     @Test
+    @Owner(value = "Голдина М.А.")
+    @TmsLink(value = "PN-11")
+    @Story("Недопустимое изменение данных пользователя")
+    @Severity(value = SeverityLevel.CRITICAL)
     @Description("This test check status code and answer for change user's email to uncorrect email.")
     @DisplayName("Test negative edit user data with uncorrect email")
+    @Tag("edit user")
     public void testEditUserDataWithUncorrectEmail() {
         //CREATE USER
         Map<String, String> userData = DataGenerator.getRegistrationData();
@@ -213,11 +235,18 @@ public class UserEditTest extends BaseTestCase {
         Assertions.assertJsonByName(responseEditUser, "error", "Invalid email format");
     }
 
+    @Owner(value = "Голдина М.А.")
+    @TmsLink(value = "PN-12")
+    @Story("Недопустимое изменение данных пользователя")
+    @Severity(value = SeverityLevel.NORMAL)
     @Description("This test check status code and answer for edit user data with uncorrect name with 1 symbol.")
     @DisplayName("Test negative edit user data with uncorrect name")
-    @ParameterizedTest
+    @ParameterizedTest(name = "{displayName} in {0}")
     @ValueSource(strings = {"username", "firstName", "lastName"})
+    @Tag("edit user")
     public void testEditUserDataWithUncorrectName(String field) {
+        Allure.parameter("testing field", field);
+
         //CREATE USER
         Map<String, String> userData = DataGenerator.getRegistrationData();
 
